@@ -191,4 +191,35 @@ if st.button("Start Scan"):
                 pass
             send_email_alert(target, df.to_dict('records'), hostname)
 
+import nmap
+import os
+
+def scan_target(target):
+    nmap_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "nmap.exe", "nmap.exe"))
+    
+    if not os.path.exists(nmap_path):
+        return {"error": f"nmap.exe not found at {nmap_path}"}
+        
+    try:
+        scanner = nmap.PortScanner(nmap_search_path=[nmap_path])
+        scanner.scan(hosts=target, arguments='-sV')
+        results = []
+        for host in scanner.all_hosts():
+            for proto in scanner[host].all_protocols():
+                ports = scanner[host][proto].keys()
+                for port in ports:
+                    service = scanner[host][proto][port]
+                    results.append({
+                        'ip': host,
+                        'port': port,
+                        'name': service['name'],
+                        'state': service['state'],
+                        'product': service.get('product', 'unknown'),
+                        'version': service.get('version', 'unknown')
+                    })
+        return results
+    except nmap.nmap.PortScannerError as e:
+        return {"error": f"Nmap scan failed: {e}"}
+    except Exception as e:
+        return {"error": f"An unexpected error occurred: {e}"}
 
