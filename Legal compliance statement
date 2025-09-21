@@ -1,0 +1,16 @@
+🛡️ Legal & Compliance Statement
+
+BreachProof360 uses trusted, publicly available security resources to help businesses stay protected:
+	•	CISA Known Exploited Vulnerabilities (KEV) – U.S. government catalog of vulnerabilities actively exploited by attackers.
+	•	AbuseIPDB – Crowdsourced database for reporting malicious IP addresses.
+	•	AlienVault OTX (Open Threat Exchange) – Community-driven threat intelligence sharing platform.
+
+✔️ Responsible Use
+	•	BreachProof360 is used by Secure360Solutions only for authorized security assessments.
+	•	We respect all API rate limits and terms of service.
+	•	Results are used to improve client security posture — never to exploit vulnerabilities.
+
+⚖️ Compliance & Ethics
+	•	Data sources are attributed where required (e.g., “Powered by AbuseIPDB” or “Threat intel from AlienVault OTX”).
+	•	No raw API data is resold or redistributed outside of reports.
+	•	All scans are performed with client consent to comply with legal and ethical penetration testing guidelines.
