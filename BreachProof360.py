@@ -218,7 +218,7 @@ with col1:
             st.warning("Please enter a target.")
         else:
             with st.status(f"Quick scanning {target}...", expanded=True) as status:
-                args = "-sT -Pn -p 22,80,443,3389,445 --open --max-retries 1 --host-timeout 20s -sV --version-light"
+                args = "-sT -Pn -p 22,80,443,3389,445 --open --max-retries 0 --host-timeout 10s -T4"
                 st.session_state.scan_results = scan_target(target, args)
                 status.update(label="Quick scan complete!", state="complete")
 
