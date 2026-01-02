@@ -509,15 +509,11 @@ with col1:
                 with st.status(f"Scanning {target} with {profile['name']}...", expanded=True) as status:
                     st.write(f"⏱️ Estimated time: {profile['time']}")
                     st.write(f"🔍 Scanning ports: {profile['ports']}")
+                    st.write("⚡ Scanning in progress...")
                     
-                    progress_bar = st.progress(0)
                     start_time = time.time()
                     
-                    # Simulate progress (nmap doesn't provide real-time progress easily)
-                    for i in range(100):
-                        progress_bar.progress(i + 1)
-                        time.sleep(0.01)  # Small delay for visual feedback
-                    
+                    # Perform the actual scan
                     result = scan_target(target, profile["args"])
                     st.session_state.scan_results = result
                     
@@ -525,19 +521,16 @@ with col1:
                     cache_result(target, st.session_state.scan_profile, result)
                     
                     elapsed = time.time() - start_time
-                    status.update(label=f"Scan complete in {elapsed:.2f} seconds!", state="complete")
+                    status.update(label=f"✅ Scan complete in {elapsed:.2f} seconds!", state="complete")
 
 with col2:
     if st.button("🌐 Network Discovery", key="network_scan_btn", use_container_width=True):
         with st.status("Discovering network devices...", expanded=True) as status:
             st.write("🔍 Scanning local network...")
-            progress_bar = st.progress(0)
-            for i in range(100):
-                progress_bar.progress(i + 1)
-                time.sleep(0.01)
+            st.write("⚡ Discovery in progress...")
             
             st.session_state.network_results = discover_network()
-            status.update(label="Network discovery complete!", state="complete")
+            status.update(label="✅ Network discovery complete!", state="complete")
 
 with col3:
     if st.button("🗑️ Clear Cache", key="clear_cache_btn", use_container_width=True):
