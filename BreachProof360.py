@@ -7,6 +7,13 @@ import socket
 import ipaddress
 import shutil
 from datetime import datetime
+from threat_intel import (
+    get_service_cves,
+    get_port_threat_intel,
+    calculate_threat_score,
+    get_security_recommendations,
+    get_threat_summary
+)
 
 # Configure Streamlit page
 st.set_page_config(page_title="BreachProof360", layout="centered")
@@ -218,7 +225,7 @@ with col1:
             st.warning("Please enter a target.")
         else:
             with st.status(f"Quick scanning {target}...", expanded=True) as status:
-                args = "-sT -Pn -p 22,80,443,3389,445 --open --max-retries 0 --host-timeout 10s -T4"
+                args = "-sT -Pn -p 22,80,443,3389,445 --open --max-retries 0 --host-timeout 5s -T5 --min-rate 1000"
                 st.session_state.scan_results = scan_target(target, args)
                 status.update(label="Quick scan complete!", state="complete")
 
@@ -291,6 +298,96 @@ if st.session_state.scan_results:
             col2.metric("🟡 Medium Risk", medium_risk)
             col3.metric("🟢 Low Risk", low_risk)
             col4.metric("📊 Total Ports", len(results))
+            
+            # Threat Intelligence Section
+            st.markdown("---")
+            st.subheader("🎯 Threat Intelligence Analysis")
+            
+            # Calculate threat score
+            threat_score, severity, concerns = calculate_threat_score(results)
+            
+            # Display threat score with color coding
+            threat_summary = get_threat_summary(threat_score, severity)
+            
+            if severity == "critical":
+                st.error(threat_summary)
+            elif severity == "high":
+                st.warning(threat_summary)
+            elif severity == "medium":
+                st.info(threat_summary)
+            else:
+                st.success(threat_summary)
+            
+            # Threat Score Meter
+            st.markdown("### Threat Score Meter")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.progress(threat_score / 100)
+            with col2:
+                st.metric("Score", f"{threat_score}/100")
+            
+            # Key Concerns
+            if concerns:
+                st.markdown("### 🚨 Key Security Concerns")
+                for concern in concerns[:5]:  # Show top 5 concerns
+                    if "CRITICAL" in concern:
+                        st.error(f"• {concern}")
+                    elif "HIGH" in concern:
+                        st.warning(f"• {concern}")
+                    else:
+                        st.info(f"• {concern}")
+            
+            # CVE Details
+            st.markdown("### 🔍 Known Vulnerabilities (CVEs)")
+            cve_found = False
+            for result in results:
+                product = result.get("product", "N/A")
+                version = result.get("version", "N/A")
+                port = result.get("port")
+                
+                cves = get_service_cves(product, version)
+                if cves:
+                    cve_found = True
+                    with st.expander(f"Port {port} - {product} {version}"):
+                        for cve in cves:
+                            severity_color = "🔴" if cve["severity"] == "critical" else "🟠" if cve["severity"] == "high" else "🟡"
+                            st.markdown(f"""
+                            **{severity_color} {cve['cve']}** - Severity: {cve['severity'].upper()} (CVSS: {cve['score']})
+                            
+                            {cve['description']}
+                            
+                            [View on NIST NVD](https://nvd.nist.gov/vuln/detail/{cve['cve']})
+                            """)
+            
+            if not cve_found:
+                st.success("✅ No known CVEs found for detected service versions")
+            
+            # Security Recommendations
+            st.markdown("### 💡 Security Recommendations")
+            recommendations = get_security_recommendations(results)
+            
+            for idx, rec in enumerate(recommendations[:5], 1):  # Show top 5 recommendations
+                severity_emoji = {
+                    "critical": "🚨",
+                    "high": "⚠️",
+                    "medium": "🟡",
+                    "low": "🟢"
+                }.get(rec["severity"], "ℹ️")
+                
+                with st.expander(f"{severity_emoji} Priority {idx}: Port {rec['port']} - {rec['service']}"):
+                    st.markdown(f"**Service:** {rec['product']} {rec['version']}")
+                    st.markdown(f"**Severity:** {rec['severity'].upper()}")
+                    st.markdown(f"**Recommendation:** {rec['recommendation']}")
+                    
+                    if rec.get("common_attacks"):
+                        st.markdown("**Common Attacks:**")
+                        for attack in rec["common_attacks"]:
+                            st.markdown(f"• {attack}")
+                    
+                    if rec.get("cves"):
+                        st.markdown("**Related CVEs:**")
+                        for cve in rec["cves"]:
+                            st.markdown(f"• {cve['cve_id']} - {cve['description']}")
             
             # Export functionality
             st.subheader("📥 Export Results")
